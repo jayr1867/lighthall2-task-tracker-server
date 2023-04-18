@@ -23,6 +23,10 @@ app.get('/', (req, res) => {
     res.send('Hello World!')
   })
 
+app.get('/users', (req,res)=> {
+    res.send(REGISTEREDUSERS);
+})
+
 app.post('/signup', (req,res) => {
     //retrieves the username from the http request body
     const { username } = req.body
