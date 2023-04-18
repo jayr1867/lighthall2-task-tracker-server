@@ -30,7 +30,7 @@ const TASKSLIST = [
     },
     {
         username:"Mary",
-        task_id: 0,
+        task_id: 1,
         title: "Bake Cake",
         description: "Bake a chocolate cake",
         status:"Not Started",
@@ -38,7 +38,7 @@ const TASKSLIST = [
     },
     {
         username:"Bob",
-        task_id: 0,
+        task_id: 2,
         title: "Learn React",
         description: "Finish coursera section 1 on React.js",
         status:"Not Started",
@@ -46,7 +46,7 @@ const TASKSLIST = [
     },
     {
         username:"Bob",
-        task_id: 0,
+        task_id: 3,
         title: "Laundry",
         description: "Finish Laundry",
         status:"Not Started",
@@ -54,7 +54,7 @@ const TASKSLIST = [
     },
     {
         username:"Foo",
-        task_id: 0,
+        task_id: 4,
         title: "Work on thesis report",
         description: "Finish section 2",
         status:"Not Started",
@@ -96,6 +96,39 @@ app.post('/signup', (req,res) => {
     console.log(REGISTEREDUSERS);
 
     res.status(200).send('OK');
+})
+
+app.post('/task', (req,res) => {
+    const {username, title, description, status, due_date} = req.body;
+    const t_id = TASKSLIST.length;
+
+    TASKSLIST.push(
+        {
+            username: username,
+            task_id: t_id,
+            title: title,
+            description: description,
+            status: status,
+            due_date: due_date
+        }
+    )
+
+    res.status(200).send(TASKSLIST.filter(task => task.username === username));
+})
+
+app.put('/task', (req,res) => {
+    const {username, task_id, title, description, status, due_date} = req.body;
+
+    TASKSLIST[task_id] = {
+        username:username,
+        task_id:task_id,
+        title:title,
+        description:description,
+        status:status,
+        due_date: new Date(due_date)
+    }
+
+    res.status(200).send(TASKSLIST.filter(task => task.username === username));
 })
 
 // app.post('/login', (req,res) => {
