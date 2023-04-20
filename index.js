@@ -1,11 +1,28 @@
+require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const mongoose = require('mongoose');
+const schema = require('./models/schema');
+const ObjectId = require('mongoose').Types.ObjectId;
+const uri = process.env.URI;
+
 const app = express();
 const port = 4000;
 
+mongoose.connect(uri, {
+    useNewUrlParser: true
+  }).then((conn) => {
+    console.log("CONNECTED!");
+  }).catch((err) => {
+    console.log(err);
+  })
+
+
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.json());
 
 const REGISTEREDUSERS = [
     {
@@ -70,7 +87,7 @@ app.get('/users', (req,res)=> {
     res.send(REGISTEREDUSERS);
 })
 
-app.post('/signup', (req,res) => {
+app.post('/signup', async (req,res) => {
     //retrieves the username from the http request body
     const { username } = req.body
 
@@ -85,8 +102,17 @@ app.post('/signup', (req,res) => {
 
     //If entered username already exists, return an error message
     if (exists){
-        const userTasks = TASKSLIST.filter(task => task.username === username);
-        res.status(200).send(userTasks);
+        // const userTasks = TASKSLIST.filter(task => task.username === username);
+        // res.status(200).send(userTasks);
+
+        try {
+            /* returning the an array of tasks */
+            const user_tasks = await schema.find({username: username});
+
+            res.status(200).json(user_tasks);
+        } catch(err) {
+            res.status(400).json({message: err.message});
+        }
         return;
     }
 
@@ -98,38 +124,93 @@ app.post('/signup', (req,res) => {
     res.status(200).send('OK');
 })
 
-app.post('/task', (req,res) => {
+app.post('/task', async (req,res) => {
     const {username, title, description, status, due_date} = req.body;
-    const t_id = TASKSLIST.length;
+    // const t_id = TASKSLIST.length;
 
-    TASKSLIST.push(
-        {
-            username: username,
-            task_id: t_id,
-            title: title,
-            description: description,
-            status: status,
-            due_date: due_date
-        }
-    )
+    // TASKSLIST.push(
+    //     {
+    //         username: username,
+    //         task_id: t_id,
+    //         title: title,
+    //         description: description,
+    //         status: status,
+    //         due_date: due_date
+    //     }
+    // )
 
-    res.status(200).send(TASKSLIST.filter(task => task.username === username));
-})
-
-app.put('/task', (req,res) => {
-    const {username, task_id, title, description, status, due_date} = req.body;
-
-    TASKSLIST[task_id] = {
-        username:username,
-        task_id:task_id,
-        title:title,
-        description:description,
-        status:status,
+    const new_task = new schema({
+        username: username,
+        // task_id: temp_id,
+        title: title,
+        description: description,
+        status: status,
         due_date: new Date(due_date)
+    });
+
+    try {
+        const user_task = await new_task.save();
+        res.status(201).json({"_id": user_task._id});
+    } catch(err) {
+        res.status(400).json({message: err.message});
     }
 
-    res.status(200).send(TASKSLIST.filter(task => task.username === username));
+
+    // res.status(200).send(TASKSLIST.filter(task => task.username === username));
 })
+
+app.put('/task', async (req,res) => {
+    // const {username, task_id, title, description, status, due_date} = req.body;
+
+    // TASKSLIST[task_id] = {
+    //     username:username,
+    //     task_id:task_id,
+    //     title:title,
+    //     description:description,
+    //     status:status,
+    //     due_date: new Date(due_date)
+    // }
+
+    const id = new ObjectId(req.body._id);
+    const uname = req.body.username;
+    const ttl = req.body.title;
+    const desc = req.body.description;
+    const sts = req.body.status;
+    const date = new Date(req.body.due_date);
+
+    try {
+        const task_update = await schema.updateOne(
+          {_id: id},
+          {$set: {
+            username: uname,
+            title: ttl,
+            description: desc,
+            status: sts,
+            due_date: date
+          }})
+      
+          const cur_user = await schema.find({username: uname});
+          
+          res.status(200).json(cur_user);
+        } catch(err) {
+          res.status(500).json({message: err.message});
+        }
+
+    // res.status(200).send(TASKSLIST.filter(task => task.username === username));
+})
+
+
+app.delete('/task', async (req,res) => {
+    const id = new ObjectId(req.body._id);
+
+    try {
+        const task_delete = await schema.deleteOne({_id: id});
+        // console.log(task_delete);
+        res.status(200).json({message: "Task deleted successfully"});
+    } catch(err) {
+        res.status(500).json({message: err.message});
+    }
+});
 
 // app.post('/login', (req,res) => {
 //     //retrieves the username from the http request body
