@@ -47,7 +47,7 @@ app.post('/signup', async (req,res) => {
     if (exists){
 
         try {
-            /* returning the an array of tasks */
+            /* returning an array of tasks */
             const user_tasks = await schema.find({username: username});
 
             res.status(200).json(user_tasks);
